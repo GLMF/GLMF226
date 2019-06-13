@@ -1,0 +1,72 @@
+---
+
+- name: Installation des paquets de base
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  vars:
+    - home: /home/login_user
+
+  tasks:
+    - name: Installation de aptitude (si celui-ci est absent)
+      command: apt -y install aptitude
+  
+    - name: Mise à jour de apt
+      apt: 
+          update_cache: yes
+
+    - name: Mise à jour du système
+      apt: 
+          upgrade: yes
+
+    - name: Installation de Vim
+      apt: 
+          name: vim
+
+    - name: Installation de Shutter
+      apt: 
+          name: shutter
+
+    - name: Installation de GEdit
+      apt: 
+          name: gedit
+
+    - name: Installation de ls pour hardware
+      apt: 
+          name: lshw
+
+    - name: Installation de Wine
+      apt: 
+          name: wine
+
+    - name: Installation de iwatch (surveillance de modification de fichiers)
+      apt: 
+          name: iwatch
+
+    - name: Modification de /etc/iwatch/iwatch.xml pour surveiller /home/login_user/Bureau/Dossier-travail/Cabinet/CR_BILAN
+      lineinfile:
+          dest: /etc/iwatch/iwatch.xml
+          insertbefore: '^  </watchlist>'
+          line: '    <path type="recursive" syslog="on" alert="off" events="create" exec="/home/login_user/bin/extract_data/extract_data.py %f">/home/login_user/Bureau/Dossier-travail/Cabinet/CR_BILAN</path>'
+        
+    - name: Autorisation de lancement d'iwatch sans mot de passe
+      lineinfile:
+          dest: /etc/sudoers
+          insertafter: '^%root    ALL=(ALL:ALL) ALL'
+          line: 'login_user	ALL=(root) NOPASSWD:/usr/bin/iwatch'
+          validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Vérification de l'existence du fichier {{home}}/.config/autostart/iwatch.desktop
+      command: test -f {{home}}/.config/autostart/iwatch.desktop
+      register: iwatch_desktop_exists
+      ignore_errors: True
+
+    - name: Copie du fichier {{home}}/.config/autostart/iwatch.desktop dans {{home}}/.config/autostart
+      copy:
+          src: "{{home}}/bin/data/ansible/autostart/iwatch.desktop"
+          dest: "{{home}}/.config/autostart/iwatch.desktop"
+          owner: login_user
+          group: login_user
+          mode: 0644
+      when: iwatch_desktop_exists.rc == 1

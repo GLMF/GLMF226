@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Exec=sudo iwatch -d -f /etc/iwatch/iwatch.xml
+Hidden=false
+X-MATE-Autostart-enabled=true
+Name[fr_FR]=Iwatch
+Name=Iwatch
+Comment[fr_FR]=
+Comment=

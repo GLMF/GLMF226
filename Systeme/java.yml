@@ -1,0 +1,52 @@
+---
+
+- name: Installation de Oracle Java
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  vars:
+    - apt_file: /etc/apt/sources.list.d/oracle_java.list
+
+  tasks:
+    - name: Vérification de l'existence du fichier {{apt_file}}
+      command: test -f {{apt_file}}
+      register: java_apt_exists
+      ignore_errors: True
+
+    - name: Ajout de la clé pour Oracle Java
+      apt_key:
+          keyserver: hkp://keyserver.ubuntu.com:80
+          id: EA8CACC073C3DB2A
+      when: java_apt_exists.rc == 1
+
+    - name: Ajout du dépôt pour Oracle Java
+      copy:
+          content: "deb http://ppa.launchpad.net/linuxuprising/java/ubuntu bionic main"
+          dest: "{{apt_file}}"
+          owner: root
+          group: root
+          mode: 644
+      when: java_apt_exists.rc == 1
+
+    - name: Mise à jour d'apt
+      apt: 
+          update_cache: yes
+      when: java_apt_exists.rc == 1
+
+    - name: Acceptation de la license
+      debconf:
+          name: 'oracle-java11-installer'
+          question: 'shared/accepted-oracle-license-v1-2'
+          value: 'true'
+          vtype: 'select'
+
+    - name: Installation de Oracle Java
+      apt:
+          pkg: oracle-java11-installer
+          state: installed
+
+    - name: Choix de Oracle Java par défaut
+      apt: 
+          pkg: oracle-java11-set-default
+          state: installed

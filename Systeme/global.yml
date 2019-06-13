@@ -1,0 +1,28 @@
+---
+
+- name: Installation globale des outils
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  tasks:
+    - name: [Global] Installation des outils de base
+      include: base.yml
+
+    - name: [Global] Installation de Google Chrome
+      include: chrome.yml
+
+    - name: [Global] Installation de Oracle Java 8
+      include: java_8.yml
+
+    - name: [Global] Installation de Virtualbox
+      include: virtualbox.yml
+
+    - name: [Global] Installation du système de sauvegarde
+      include: sauvegarde.yml
+
+    - name: [Global] Installation de Pyenv
+      include: pyenv.yml
+
+    - name: [Global] Installation du Bluetooth
+      include: bluetooth.yml

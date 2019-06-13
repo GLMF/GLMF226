@@ -1,0 +1,19 @@
+---
+
+- name: Configuration du bluetooth
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  tasks:
+    - name: Installation des paquets
+      apt: 
+          name: "{{item}}"
+      with_items:
+        - bluetooth
+        - gnome-bluetooth
+        - blueman
+
+    - name: Action requise
+      notify:
+          - "Vous devez redémarrer le serveur X pour que l'installation soit achevée"

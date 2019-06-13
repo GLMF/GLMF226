@@ -1,0 +1,52 @@
+---
+
+- name: Installation de Oracle Java
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  vars:
+    - apt_file: /etc/apt/sources.list.d/oracle-java-8-debian.list
+
+  tasks:
+    - name: Vérification de l'existence du fichier {{apt_file}}
+      command: test -f {{apt_file}}
+      register: java_apt_exists
+      ignore_errors: True
+
+    - name: Ajout de la clé pour Oracle Java
+      apt_key:
+          keyserver: keyserver.ubuntu.com
+          id: EEA14886
+      when: java_apt_exists.rc == 1
+
+    - name: Ajout du dépôt pour Oracle Java
+      copy: 
+          content: "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main"
+          dest: "{{apt_file}}"
+          owner: root 
+          group: root
+          mode: 644
+      when: java_apt_exists.rc == 1
+
+    - name: Mise à jour d'apt
+      apt:
+          update_cache: yes
+      when: java_apt_exists.rc == 1
+
+    - name: Acceptation de la licence
+      debconf:
+          name: 'oracle-java8-installer' 
+          question: 'shared/accepted-oracle-license-v1-1'
+          value: 'true'
+          vtype: 'select'
+
+    - name: Installation de Oracle Java 8
+      apt:
+          pkg: oracle-java8-installer
+          state: installed
+
+    - name: Choix de Oracle Java 8 par défaut
+      apt: 
+          pkg: oracle-java8-set-default
+          state: installed

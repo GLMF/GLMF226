@@ -1,0 +1,65 @@
+---
+
+- name: Installation de Pyenv
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  vars:
+      - owner: login_user
+      - group: login_user
+      - pyenv_path: /home/login_user/.pyenv
+      - shellrc_path: /home/login_user/.bashrc
+
+  tasks:
+    - name: Installation des paquets
+      apt: 
+          name: "{{item}}"
+      with_items:
+          - git
+          - make
+          - build-essential
+          - libssl-dev
+          - zlib1g-dev
+          - libbz2-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - wget
+          - curl
+          - llvm
+          - libncurses5-dev
+          - libncursesw5-dev
+          - xz-utils
+          - tk-dev
+
+    - name: Clonage de Pyenv
+      git:
+          repo: https://github.com/pyenv/pyenv.git
+          dest: "{{pyenv_path}}"
+
+    - name: Changement de propriétaire pour le répertoire .pyenv
+      file:
+          dest: "{{pyenv_path}}"
+          owner: "{{owner}}"
+          group: "{{group}}"
+          recurse: yes
+
+    - name: Ajout du chemin vers Pyenv dans le {{shellrc_path}}
+      blockinfile:
+          dest: "{{shellrc_path}}"
+          block: |
+              ###########################
+              # Configuration de Python #
+              ###########################
+              ## PATH pour pyenv
+              export PATH=${PATH}:{{pyenv_path}}/bin
+              
+              ## Encodage de Python en utf-8
+              export PYTHONIOENCODING="utf-8"    
+              
+              ## PyEnv
+              if [ -z ${PROFILE_LOADED} ]; then
+                  export PROFILE_LOADED=true
+                  eval "$(pyenv virtualenv-init -)"
+                  eval "$(pyenv init -)"
+              fi

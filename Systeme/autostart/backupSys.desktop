@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Exec=backupSys notify
+Hidden=false
+X-MATE-Autostart-enabled=true
+Name[fr_FR]=BackupSys Notification
+Name=BackupSys Notification
+Comment[fr_FR]=
+Comment=

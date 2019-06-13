@@ -1,0 +1,79 @@
+---
+
+- name: Installation du système de sauvegarde
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  vars:
+    - home: /home/login_user
+    - owner: login_user
+    - group: login_user
+
+  tasks:
+    - name: Installation des paquets
+      apt: 
+          name: "{{item}}"
+      with_items:
+        - libnotify-bin
+        - rsync
+        - msmtp
+        - openssl 
+        - ca-certificates
+
+    - name: Ajout du fichier de log
+      lineinfile:
+          dest: /etc/rsyslog.conf
+          line: 'local0.*                        -/var/log/backup.log'
+
+    - name: Vérification de l'existence du fichier {{home}}/.msmtprc
+      command: test -f {{home}}/.msmtprc
+      register: msmtprc_config_exists
+      ignore_errors: True
+
+    - name: Copie du fichier {{home}}/bin/data/ansible/config/./msmtprc dans {{home}}/.msmtprc
+      copy:
+          src: "{{home}}/bin/data/ansible/config/.msmtprc"
+          dest: "{{home}}/.msmtprc"
+          owner: "{{owner}}"
+          group: "{{group}}"
+          mode: 0644
+      when: msmtprc_config_exists.rc == 1
+
+    - name: Autorisation de lancement de backupSys sans mot de passe
+      lineinfile:
+          dest: /etc/sudoers
+          insertafter: '^%root    ALL=(ALL:ALL) ALL'
+          line: '{{owner}}	ALL=(root) NOPASSWD:{{home}}/bin/backupSys'
+          validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Ajout du cron pour sauvegarde automatique tous les jours à 12h
+      cron:
+          name: Sauvegarde automatique tous les jours à 12h
+          minute: 0
+          hour: 12
+          user: "{{owner}}"
+          job: "export DISPLAY=:0 && {{home}}/bin/backupSys save 0 init"
+
+    - name: Ajout du cron pour envoi d'un rapport tous les mardis à 13h
+      cron:
+          name: Envoi d'un rapport de sauvegarde tous les mardis à 13h
+          minute: 0
+          hour: 13
+          weekday: 2
+          user: "{{owner}}"
+          job: "{{home}}/bin/backupSys mail"
+
+    - name: Vérification de l'existence du fichier {{home}}/.config/autostart/backupSys.desktop
+      command: test -f {{home}}/.config/autostart/backupSys.desktop
+      register: backupSys_desktop_exists
+      ignore_errors: True
+
+    - name: Copie du fichier {{home}}/.config/autostart/backupSys.desktop dans {{home}}/.config/autostart
+      copy:
+          src: "{{home}}/bin/data/ansible/autostart/backupSys.desktop"
+          dest: "{{home}}/.config/autostart/backupSys.desktop"
+          owner: "{{owner}}"
+          group: "{{group}}"
+          mode: 0644
+      when: backupSys_desktop_exists.rc == 1
